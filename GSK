@@ -1,0 +1,92 @@
+var gulp = require('gulp'),
+  watch = require('gulp-watch'),
+  autoprefixer = require('autoprefixer'),
+  cssImport = require('postcss-import'),
+  postcss = require('gulp-postcss'),
+  nested = require('postcss-nested'),
+  simplevars = require('postcss-simple-vars'),
+  mixins = require('postcss-mixins'),
+  webpack = require('gulp-webpack'),
+  browsersync = require('browser-sync').create();
+
+var sharedSrc = 'shared/**/*';
+var addSharedSrc =
+  'Lamictal_Bipolar_SC_03_2018_KR_1.0/Lamictal_Bipolar_SC_03_2018_KR_1.0_ADD';
+var mainSharedSrc =
+  'Lamictal_Bipolar_SC_03_2018_KR_1.0/Lamictal_Bipolar_SC_03_2018_KR_1.0_MAIN';
+
+gulp.task('gen-shared', function() {
+  return gulp
+    .src(sharedSrc, { base: '.' })
+    .pipe(gulp.dest(addSharedSrc))
+    .pipe(gulp.dest(mainSharedSrc));
+});
+
+gulp.task('default', ['gen-shared']);
+
+/*  Watch Task*/
+gulp.task('watch', function() {
+  browsersync.init({
+    server: {
+      baseDir: mainSharedSrc + '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000', // ', 계속 바꾸어주어야함. 이게 최선인가
+    },
+  });
+  watch(
+    mainSharedSrc + '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000/index.html',
+    function() {
+      browsersync.reload();
+    }
+  );
+
+  //일반폴더 css
+  watch(
+    mainSharedSrc + '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000/css/**/*.css',
+    function() {
+      gulp.start('cssChange');
+    }
+  );
+  //shared 폴더 감지
+  // watch(mainSharedSrc + '/shared/css/**/*.css', function() {
+  //   gulp.start('cssChange');
+  // });
+});
+
+/*   
+    // Style task //  
+ */
+gulp.task('cssChange', ['styles'], function() {
+  return gulp
+    .src(
+      mainSharedSrc +
+        '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000/temp/styles/local.css'
+    )
+    .pipe(browsersync.stream());
+});
+
+//일반 폴더 styles
+gulp.task('styles', function() {
+  return gulp
+    .src(
+      mainSharedSrc + '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000/css/local.css'
+    )
+    .pipe(postcss([autoprefixer, cssImport, simplevars, mixins, nested]))
+    .on('error', function(errorInfo) {
+      console.log(errorInfo.toString());
+      this.emit('end');
+    })
+    .pipe(
+      gulp.dest(
+        mainSharedSrc + '/Lamictal_Bipolar_SC_03_2018_KR_1.0_000/temp/styles'
+      )
+    );
+});
+// gulp.task('shareStyles', function() {
+//   return gulp
+//     .src(mainSharedSrc + '/shared/css/core.css')
+//     .pipe(postcss([autoprefixer, cssImport, simplevars, mixins, nested]))
+//     .on('error', function(errorInfo) {
+//       console.log(errorInfo.toString());
+//       this.emit('end');
+//     })
+//     .pipe(gulp.dest(mainSharedSrc + '/shared/temp/styles/'));
+// });

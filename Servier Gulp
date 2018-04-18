@@ -1,0 +1,58 @@
+var gulp = require('gulp'),
+  watch = require('gulp-watch'),
+  autoprefixer = require('autoprefixer'),
+  cssImport = require('postcss-import'),
+  postcss = require('gulp-postcss'),
+  nested = require('postcss-nested'),
+  simplevars = require('postcss-simple-vars'),
+  mixins = require('postcss-mixins'),
+  webpack = require('gulp-webpack'),
+  browsersync = require('browser-sync').create();
+
+var currentPath = 'Servier-Hypertension-group-portfolio_2018_001';
+
+gulp.task('watch', function() {
+  browsersync.init({
+    server: {
+      baseDir: currentPath,
+    },
+  });
+  watch(currentPath + '/index.html', function() {
+    browsersync.reload();
+  });
+  watch(currentPath + '/css/**/*.css', function() {
+    gulp.start('cssChange');
+  });
+  watch('shared/css/**/*.css', function() {
+    gulp.start('shareCss');
+  });
+});
+
+//CSS가 바뀌면 Postcss를 통하여 변형한다음 다시 브라우저싱크 리로드하는 task
+gulp.task('cssChange', ['styles'], function() {
+  return gulp.src(currentPath).pipe(browsersync.stream());
+});
+
+gulp.task('styles', function() {
+  return gulp
+    .src(currentPath + '/css/local.css')
+    .pipe(postcss([autoprefixer, cssImport, simplevars, mixins, nested]))
+    .on('error', function(errorInfo) {
+      console.log(errorInfo.toString());
+      this.emit('end');
+    })
+    .pipe(gulp.dest(currentPath + '/temp/styles'))
+    .pipe(browsersync.stream());
+});
+
+gulp.task('shareCss', function() {
+  return gulp
+    .src('shared/css/core.css')
+    .pipe(postcss([autoprefixer, cssImport, simplevars, mixins, nested]))
+    .on('error', function(errorInfo) {
+      console.log(errorInfo.toString());
+      this.emit('end');
+    })
+    .pipe(gulp.dest(currentPath + '/temp/styles/'))
+    .pipe(browsersync.stream());
+});
